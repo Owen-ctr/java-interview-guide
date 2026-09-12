@@ -19,7 +19,6 @@ export default defineConfig({
     sidebar: [
       {
         text: 'Java',
-        link: '/java/',
         collapsed: true,
         items: [
           { text: 'Java 基础', link: '/java/basis/' },
@@ -31,7 +30,6 @@ export default defineConfig({
       },
       {
         text: '数据库',
-        link: '/database/',
         collapsed: true,
         items: [
           { text: 'MySQL', link: '/database/mysql/' },
@@ -40,7 +38,6 @@ export default defineConfig({
       },
       {
         text: '框架',
-        link: '/framework/',
         collapsed: true,
         items: [
           { text: 'Spring', link: '/framework/spring/' },
@@ -49,9 +46,6 @@ export default defineConfig({
           { text: 'MyBatis', link: '/framework/mybatis/' },
         ],
       },
-      { text: '系统设计', link: '/system-design/' },
-      { text: '分布式', link: '/distributed/' },
-      { text: '高性能 & 高可用', link: '/high-availability/' },
     ],
     search: {
       provider: 'local',
