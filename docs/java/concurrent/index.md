@@ -365,6 +365,48 @@ int ioBound  = cores * (1 + 2);     // 假设等待时间 / 计算时间 ≈ 2
 - **线程数必须区分任务类型吗**：必须。给 IO 密集任务配 `核数 + 1` 会严重浪费并发能力；反过来给 CPU 密集任务配几百个线程，只会加剧上下文切换。
 - **多个业务共用一个线程池有什么风险**：一个业务的任务堆积会拖垮其它业务（队头阻塞）。应按业务隔离线程池，核心链路单独配置。
 
+## CompletableFuture 是什么？和 Future 有什么区别？
+
+结论：`Future` 只能**阻塞式**拿结果、也无法编排多个任务；`CompletableFuture`（JDK 8）在它之上提供了**回调、组合与异常处理**，是 Java 异步编排的主力。
+
+`Future` 的四个短板：
+
+1. **只能阻塞取结果**：`get()` 会一直等，`get(timeout)` 也只是限时等，没有"完成了通知我"的办法。
+2. **无法组合**：想让 B 在 A 完成后执行、或等 A + B 都完成再做 C，用 `Future` 只能自己写阻塞逻辑。
+3. **无法优雅处理异常**：只能拿 `try-catch` 包住 `get()`。
+4. **不支持回调**：要么阻塞，要么轮询 `isDone()`。
+
+`CompletableFuture` 怎么解决：
+
+- **回调**：`thenApply`（转换结果）、`thenAccept`（消费结果）、`thenRun`（完成后执行、不关心结果）。
+- **组合**：`thenCompose`（串行依赖，拍平嵌套）、`thenCombine`（两个都完成后合并）、`allOf`（等全部完成）、`anyOf`（任一完成即可）。
+- **异常处理**：`exceptionally`（兜底）、`handle`（无论成败都处理）、`whenComplete`（只做收尾、不改结果）。
+- **主动完成**：`complete(value)` 可手动结束；取结果用 `get()` 或 `join()`（**`join` 不抛受检异常**）。
+
+```java
+// 串行：查询用户 → 用用户信息查订单
+CompletableFuture<String> future = CompletableFuture
+        .supplyAsync(() -> queryUser(id))                 // 默认用 commonPool
+        .thenApply(User::getName)
+        .thenComposeAsync(name -> queryOrder(name), pool) // 显式指定线程池
+        .exceptionally(ex -> "fallback");                 // 异常兜底
+
+// 并行：两个独立查询一起等，再合并
+CompletableFuture<String> a = CompletableFuture.supplyAsync(() -> queryA(), pool);
+CompletableFuture<String> b = CompletableFuture.supplyAsync(() -> queryB(), pool);
+String result = a.thenCombine(b, (x, y) -> x + y).join();
+
+// 等全部完成
+CompletableFuture.allOf(a, b).join();
+```
+
+### 高频延伸（面试官爱追问）
+- **`CompletableFuture` 默认用哪个线程池**：不传 Executor 时用 **`ForkJoinPool.commonPool()`**——它是**全 JVM 共享**的，默认并行度是 CPU 核数减一。**这是最常见的坑**：把阻塞式任务（调 RPC、查库）丢进 commonPool 会占满公共线程，拖累同进程里其它用到它的代码。**线上务必显式传入业务线程池**。
+- **`thenApply` 和 `thenCompose` 有什么区别**：`thenApply` 是**映射**，若返回 `CompletableFuture` 就会嵌套成两层；`thenCompose` 是**扁平化**，把两层拍平，等价于 `flatMap`。返回 `CompletableFuture` 时用 `thenCompose`，否则用 `thenApply`。
+- **带 `Async` 后缀和不带有什么区别**：不带 `Async` 的方法由**上一个任务完成时所在的那个线程**执行（可能是别人的任务线程，也可能就是主线程）；带 `Async` 的会把后续动作**提交给线程池**执行，并可指定 Executor。为了可控，链上最好统一用带 `Async` 的版本。
+- **`get()` 和 `join()` 有什么区别**：`get()` 抛受检的 `InterruptedException` / `ExecutionException`；`join()` 抛**非受检**的 `CompletionException`，因此在 lambda 里更适合用 `join()`。
+- **异常是怎么传播的**：某一步抛异常后，后续的 `thenApply` 等**会被跳过**，直到遇到 `exceptionally` / `handle` 才被处理；若一路没人处理，最终 `get()` / `join()` 会抛出（被包成 `ExecutionException` / `CompletionException`）。
+
 ## AQS 是什么？ReentrantLock 是怎么基于它实现的？
 
 结论：AQS（`AbstractQueuedSynchronizer`）是 JDK 5 引入的**同步器框架**，用「一个 `volatile int state` + 一条 CLH 变体双向等待队列」把"排队、阻塞、唤醒"这套通用逻辑封装好，子类只需实现 `tryAcquire`/`tryRelease` 等钩子方法。`ReentrantLock`、`Semaphore`、`CountDownLatch`、`ReentrantReadWriteLock` 都基于它。
@@ -387,6 +429,46 @@ int ioBound  = cores * (1 + 2);     // 假设等待时间 / 计算时间 ≈ 2
 ### 高频延伸
 - **AQS 支持哪两种模式**：独占（`acquire`/`release`，如 `ReentrantLock`）与共享（`acquireShared`/`releaseShared`，如 `Semaphore`、`CountDownLatch`）；`ReentrantReadWriteLock` 两种都用——读锁共享、写锁独占。
 - **为什么用 CLH 队列的变体**：CLH 原本是自旋锁队列，AQS 把它改成"自旋 + `LockSupport.park()` 阻塞"的变体，既保留 FIFO 公平性，又避免纯自旋浪费 CPU。
-- **`CountDownLatch` 和 `CyclicBarrier` 有什么区别**：`CountDownLatch` 基于 AQS 共享模式，计数减到 0 就放行且**不能重置**（一次性）；`CyclicBarrier` 基于 `ReentrantLock` + `Condition` 自行实现，可循环使用，语义是"一组线程互相等待"。
+- **`CountDownLatch` 和 `CyclicBarrier` 有什么区别**：一个是**一次性**的计数放行，一个是**可循环**的"等齐再走"；`Semaphore` 则是许可控制。三者的完整对照见[『CountDownLatch、CyclicBarrier、Semaphore 有什么区别？』](#countdownlatch、cyclicbarrier、semaphore-有什么区别)。
 - **`state` 只是个 `int`，够用吗**：够。`ReentrantLock` 的重入次数上限是 `Integer.MAX_VALUE`，`Semaphore` 的许可数也够用；需要更大计数时应换用 `LongAdder` 一类的分散计数，而非扩宽 AQS。
 - **为什么说 AQS 是模板方法模式**：它把"怎么排队、怎么阻塞、怎么唤醒"固定成骨架，把"什么算获取成功"开放给子类实现钩子——框架定流程、子类填判定。
+
+## CountDownLatch、CyclicBarrier、Semaphore 有什么区别？
+
+结论：三者常被放在一起问，但语义完全不同——**`CountDownLatch` 是"等够数量就放行"（一次性）**、**`CyclicBarrier` 是"等齐一批再一起走"（可循环）**、**`Semaphore` 是"控制同时访问的线程数"（发许可）**。
+
+- **`CountDownLatch`**：一组线程 `await()` 等待，其它线程每完成一项就 `countDown()`；计数减到 0 时所有等待者被放行。**一次性**——归零后不能重置。
+  - 典型场景：主线程等所有子任务完成、服务启动时等依赖就绪。
+- **`CyclicBarrier`**：一组线程互相等待，凑齐 `parties` 个后一起继续，且可以**循环复用**（`reset()`）；还能传入一个"到齐后执行"的回调（`Runnable`）。
+  - 典型场景：多阶段并行计算，每阶段结束同步一次。
+- **`Semaphore`**：维护一组**许可**，`acquire()` 拿走一个（不够就阻塞）、`release()` 归还。**不关心先后，只限制并发数**。
+  - 典型场景：接口限流、限制对某资源的并发访问（连接池、DB 并发）。
+- **与 AQS 的关系**：`CountDownLatch` 用它实现**共享模式**（计数即 `state`），`Semaphore` 用 `state` 当**许可数**；而 **`CyclicBarrier` 并不基于 AQS**——它用 `ReentrantLock` + `Condition` 自行实现（见[『AQS 是什么？ReentrantLock 是怎么基于它实现的？』](#aqs-是什么-reentrantlock-是怎么基于它实现的)）。
+
+```java
+// CountDownLatch：主线程等 3 个子任务跑完
+CountDownLatch latch = new CountDownLatch(3);
+for (int i = 0; i < 3; i++) {
+    pool.submit(() -> {
+        try { doWork(); } finally { latch.countDown(); }   // 必须放 finally
+    });
+}
+latch.await();                       // 计数归零才继续；用一次即废
+
+// Semaphore：最多 2 个线程同时访问
+Semaphore semaphore = new Semaphore(2);
+semaphore.acquire();
+try { accessResource(); }
+finally { semaphore.release(); }     // 必须放 finally，否则许可永久泄漏
+
+// CyclicBarrier：3 个线程到齐后一起继续，可循环使用
+CyclicBarrier barrier = new CyclicBarrier(3, () -> System.out.println("一波结束"));
+barrier.await();                     // 每阶段调一次，凑齐即放行
+```
+
+### 高频延伸（面试官爱追问）
+- **`CountDownLatch` 和 `CyclicBarrier` 最本质的区别**：`CountDownLatch` 是**一个线程等多个线程**（做减法、一次性）；`CyclicBarrier` 是**一批线程互相等**（凑齐、可循环）。前者等的是"事件"，后者等的是"伙伴"。
+- **`Semaphore` 的许可会"泄漏"吗**：会。`acquire()` 之后若在异常路径上忘了 `release()`，许可就永久少一个，最终所有线程都被卡住。**必须写在 `finally` 里**——这与 `countDown()` 要放 `finally` 是同一个道理。
+- **`CountDownLatch` 的计数能重用吗**：不能。归零即失效，再 `await()` 会立刻返回。需要重用就用 `CyclicBarrier`，或干脆新建一个 latch。
+- **`CyclicBarrier` 的 `reset()` 有什么风险**：会让已在等待的线程抛 `BrokenBarrierException`。它通常用于"异常后整体放弃"，正常流程不该随意调用。
+- **这三个在项目里怎么用**：批量接口并发调用后聚合结果（`CountDownLatch` 或 `CompletableFuture.allOf`）、多阶段数据加工（`CyclicBarrier`）、下游限流与资源池并发控制（`Semaphore`）。限流场景如今更常用 `RateLimiter`（Guava / Sentinel）。
