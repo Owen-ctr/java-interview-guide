@@ -14,7 +14,12 @@ export default defineConfig({
   appearance: true,
   base,
   // favicon：head 里的 href 不会被自动带上 base，必须自己拼（见上方常量）
-  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: `${base}favicon.svg` }]],
+  // 顺序有讲究：.ico 放前面兜底（Safari 不支持 SVG favicon——实测 Edge 正常、Safari 空白），
+  // 认识 SVG 的浏览器会取后一个，拿到自带亮/暗适配的矢量图标。
+  head: [
+    ['link', { rel: 'icon', href: `${base}favicon.ico`, sizes: '16x16 32x32' }],
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: `${base}favicon.svg` }],
+  ],
   themeConfig: {
     // 导航栏品牌标记：亮/暗两版，颜色与主题 indigo 一致
     logo: { light: '/logo.svg', dark: '/logo-dark.svg', alt: 'Java 面试题库' },
