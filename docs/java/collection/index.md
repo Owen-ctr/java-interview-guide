@@ -143,6 +143,7 @@ System.out.println(map.size());   // 通常 < 1000：并发下会丢元素；异
 - **`CopyOnWriteArrayList` 是怎么做的**：写时复制——每次修改都复制整个数组、在副本上改、再替换引用，因此**读完全无锁**；代价是写开销大、内存瞬时翻倍，且迭代器看到的是**快照**（弱一致：遍历中看不到后续修改，也不支持 `remove`）。适合读多写极少的场景。
 - **`ConcurrentHashMap` 能替代 `Collections.synchronizedMap` 吗**：能，且应优先。后者是整表一把锁；前者锁粒度细、读无锁、还支持协助扩容。
 - **`ConcurrentHashMap` 上的复合操作为什么要用原子方法**：先 `get` 再 `put` 之间存在竞态，应改用 `putIfAbsent`、`computeIfAbsent`、`replace` 等内置原子方法。
+- **想深入 CAS / `synchronized` / `volatile` 本身**：这里只讲它们在集合里的用途，机制原理见并发模块的[『CAS 是什么？ABA 问题如何解决？』](/java/concurrent/#cas-是什么-aba-问题如何解决)与[『synchronized 的原理是什么？它和 ReentrantLock 有什么区别？』](/java/concurrent/#synchronized-的原理是什么-它和-reentrantlock-有什么区别)。
 
 ## 遍历集合时删除元素为什么会抛 ConcurrentModificationException？
 

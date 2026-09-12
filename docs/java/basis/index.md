@@ -18,7 +18,7 @@
 - **`clone()`**：默认是**浅拷贝**（逐字段复制），且必须实现 `Cloneable`，否则抛 `CloneNotSupportedException`。
 - **`finalize()`**：GC 回收该对象前的回调，**执行时机不确定**，不应依赖它释放资源（JDK 9 起已标记废弃）。
 
-线程协作（都必须在 `synchronized` 块内调用，否则抛 `IllegalMonitorStateException`）：
+线程协作（都必须在 `synchronized` 块内调用，否则抛 `IllegalMonitorStateException`；关于 `synchronized` 与监视器本身的原理，见[『synchronized 的原理是什么？它和 ReentrantLock 有什么区别？』](/java/concurrent/#synchronized-的原理是什么-它和-reentrantlock-有什么区别)）：
 
 - **`wait()` / `wait(long)` / `wait(long, int)`**：释放锁并等待，直到被唤醒或超时。
 - **`notify()`**：随机唤醒一个在该对象监视器上等待的线程。
