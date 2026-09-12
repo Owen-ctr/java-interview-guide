@@ -24,7 +24,7 @@
 
 怎么选：频繁随机访问、或主要在尾部增删 → `ArrayList`；需要在头部/中间频繁增删、或要兼作队列/栈 → `LinkedList`。实践中 `ArrayList` 的使用频率远高于 `LinkedList`。
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **为什么实际项目几乎都用 `ArrayList`**：`LinkedList` 的 O(1) 插入只在"已持有节点引用"时成立，而按索引定位节点本身是 O(n)；再叠加每个元素多一个 `Node` 的内存开销，只有头部/中间增删极其频繁时才可能更优。
 - **`ArrayList` 是线程安全的吗**：不是。并发 `add` 可能互相覆盖，或抛 `ArrayIndexOutOfBoundsException`；需要并发时改用 `CopyOnWriteArrayList`，或在外部加锁。
 - **`size()` 和容量是一回事吗**：不是。`size()` 是实际元素个数，容量是底层数组的长度（含预留空位）。`trimToSize()` 可把容量收缩到与 `size` 一致，释放冗余。
@@ -56,7 +56,7 @@ private void grow(int minCapacity) {
 }
 ```
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **为什么默认容量是 10 却几乎感觉不到开销**：因为 JDK 7 起是懒初始化——`new ArrayList<>()` 并不分配数组，只有真正 `add` 时才建长度为 10 的数组。
 - **可以预先指定容量吗，有什么用**：可以，`new ArrayList<>(expectedSize)`。明确知道元素规模时预先指定可避免多次扩容与复制，是常见且有效的性能优化。
 - **1.5 倍和 `HashMap` 的 2 倍为什么不同**：`ArrayList` 用索引直接寻址，不需要容量是 2 的幂，所以能取更省内存的 1.5 倍；`HashMap` 则必须让容量是 2 的幂（原因见[『HashMap 的底层实现原理是什么？』](#hashmap-的底层实现原理是什么)）。
@@ -75,7 +75,7 @@ private void grow(int minCapacity) {
 
 怎么选：通用键值查找 → `HashMap`；要按插入顺序遍历、或实现 LRU → `LinkedHashMap`；要按 key 排序、做范围查询 → `TreeMap`；多线程 → `ConcurrentHashMap`（见[『ConcurrentHashMap 是如何保证线程安全的？』](#concurrenthashmap-是如何保证线程安全的)）。
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **为什么 `HashMap` 允许 null，而 `Hashtable`、`ConcurrentHashMap` 都不允许**：`HashMap` 是单线程设计，用一个特殊分支把 `null` key 放到桶 0 即可。并发容器必须在 `get` 返回 `null` 时区分"键不存在"与"值就是 null"，无法用返回值消歧，所以干脆禁止（`Hashtable` 禁用 null 则是历史设计选择）。
 - **怎么用 `LinkedHashMap` 实现 LRU**：构造时传 `accessOrder = true`，并重写 `removeEldestEntry`，返回 `true` 即自动淘汰最久未访问的条目——JDK 官方文档给出的示例就是这种写法。
 - **`TreeMap` 的 key 为什么不能为 null**：排序必须调用 `compareTo`/`compare`，对 `null` 调用会抛 NPE。若传入的自定义 `Comparator` 能处理 `null`，理论上可用，但实践中不建议。
@@ -95,7 +95,7 @@ private void grow(int minCapacity) {
 - **扩容**：容量翻倍，JDK 8 把原链表按 hash 新增的那一位拆成 `lo` / `hi` 两条，因此**顺序相对稳定**；JDK 7 则是重新计算索引且会逆序。
 - **key 的相等判定**：先比 `hash`，再比 `==` 或 `equals`。所以自定义 key 必须正确重写这两个方法，详见[『为什么重写 equals() 必须重写 hashCode()？』](/java/basis/#为什么重写-equals-必须重写-hashcode)。
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **为什么容量必须是 2 的幂**：因为定位用 `(n - 1) & hash`，只有 `n` 是 2 的幂时 `n - 1` 的低位才全是 1，位运算才等价于取模、分布才均匀；否则会有部分桶永远用不到，冲突也显著上升。
 - **链表长度 8 转树、6 退回，为什么不用同一个阈值**：留出缓冲差，避免元素数在 7~8 之间反复增删时反复树化与退化，产生无谓开销。
 - **既然到 8 才转树，为什么还要判断容量 ≥ 64**：容量小时链表长往往只是桶太少造成的，此时**扩容比树化更划算**（扩容后元素会被重新分散），所以先扩容，实在不行才树化。
@@ -117,7 +117,7 @@ IntStream.range(0, 1000).parallel().forEach(i -> map.put(i, i));
 System.out.println(map.size());   // 通常 < 1000：并发下会丢元素；异常只在极端竞态下偶发
 ```
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **JDK 8 之后 `HashMap` 就线程安全了吗**：不是。JDK 8 只修掉了"扩容成环导致死循环"，数据覆盖与 `size` 丢失依旧存在——很多人误以为换成 JDK 8 就安全了。
 - **并发场景有哪些现成替代**：首选 `ConcurrentHashMap`；`Collections.synchronizedMap` 是全表锁、性能差；`Hashtable` 是遗留类，方法级 `synchronized`，并发性能同样差。
 - **`Collections.synchronizedMap` 够用吗**：不够。它只保证**单个方法**原子，复合操作（如"不存在才放入"）仍需自行加锁；而且它是整表一把锁，并发性能远不如 `ConcurrentHashMap`。
@@ -137,7 +137,7 @@ System.out.println(map.size());   // 通常 < 1000：并发下会丢元素；异
 - **计数**：`size` 不用一把锁保护，改用 `baseCount` + `CounterCell[]` 分散计数（思路类似 `LongAdder`），`size()` 求和得到的是**近似值**。
 - **为什么不许 null**：并发下无法区分"key 不存在"与"value 就是 null"，一旦允许 null，`get` 返回 null 就有歧义，因此 key 与 value 都禁止为 null。
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **JDK 8 与 JDK 7 哪个并发度更高**：JDK 8。JDK 7 的并发度受限于段数（默认 16），同一段内仍是串行；JDK 8 把锁粒度细化到单个桶，冲突概率大幅降低。
 - **`size()` 为什么只保证近似准确**：计数分散在 `CounterCell[]` 各单元，`size()` 只是把它们求和，期间若有并发修改，返回值只是某一时刻的近似值；需要强一致计数得另加同步。
 - **`CopyOnWriteArrayList` 是怎么做的**：写时复制——每次修改都复制整个数组、在副本上改、再替换引用，因此**读完全无锁**；代价是写开销大、内存瞬时翻倍，且迭代器看到的是**快照**（弱一致：遍历中看不到后续修改，也不支持 `remove`）。适合读多写极少的场景。
@@ -172,7 +172,7 @@ while (it.hasNext()) {
 }
 ```
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **fail-fast 能保证检测到所有并发修改吗**：不能。它只在 `next()` 时校验 `modCount`，是**尽力而为**的探测机制，不保证一定发现——所以它只是 bug 探测器，不是并发安全手段。
 - **`modCount` 会因哪些操作变化**：结构性修改（`add`、`remove`、`clear`、扩容重排）自增；`set` 这类替换元素的操作不会。另需注意 `LinkedHashMap` 开启访问序后，`get` 也会改动它。
 - **`removeIf` 为什么不会抛异常**：它在迭代器内部批量删除并同步更新 `expectedModCount`，因此是安全的（JDK 8+）。
@@ -203,7 +203,7 @@ list.sort(Comparator.comparingInt(String::length)
                     .thenComparing(Comparator.naturalOrder()));
 ```
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **`compareTo` 与 `equals` 不一致会怎样**：`TreeSet`/`TreeMap` 用 `compareTo` 判重，于是可能出现"`equals` 为 `false` 却被当成重复元素丢掉"。经典例子：`new BigDecimal("1.0").equals(new BigDecimal("1.00"))` 为 `false`，但 `compareTo` 返回 0——两者放进 `TreeSet` 只会留下一个。
 - **`Comparator` 的写法演进**：JDK 8 之前要写匿名内部类；JDK 8 起可用 lambda 与方法引用，并提供了 `Comparator.comparing`、`thenComparing`、`reversed`、`naturalOrder` 等静态工具。
 - **`Collections.sort` 和 `list.sort` 有什么区别**：功能等价，`list.sort` 是 JDK 8 加入 `List` 的默认方法，更符合面向对象习惯；两者底层都走 `Arrays.sort`（对象数组用 TimSort）。
@@ -238,7 +238,7 @@ sub.set(0, 99);
 System.out.println(parent.get(1));   // 99 —— 改的就是父列表
 ```
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **`Arrays.asList(intArray)` 为什么只有一个元素**：`asList(T... a)` 是泛型可变参数，`int[]` 会被当成**一个对象**整体传入（而不是展开成多个元素），所以返回 `List<int[]>`、`size()` 为 1。应改用 `Integer[]` 或 `IntStream.of(...).boxed()`。
 - **`List.of()` 和 `Arrays.asList()` 有什么区别**：`List.of`（**JDK 9+**）创建的是**真正不可变**的集合——`set`/`add`/`remove` 全抛 `UnsupportedOperationException`，且不允许 `null`；`Arrays.asList` 是**定长可变**（`set` 可以，`add`/`remove` 不行）。基线 JDK 8 上没有 `List.of`。
 - **`subList` 的视图有什么实际用途**：`list.subList(a, b).clear()` 可以一次性删除区间元素，比循环逐个 `remove` 高效得多（只做一次数组搬移）。

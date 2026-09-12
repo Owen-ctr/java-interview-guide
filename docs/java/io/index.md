@@ -33,7 +33,7 @@ try (InputStream in = new BufferedInputStream(new FileInputStream("a.jpg"));
 }
 ```
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **为什么要有字符流，直接用字节流不行吗**：字节流得自己处理"一个字符可能由多个字节组成"（UTF-8 里汉字占 3 字节）与编码边界，极易出错；字符流把这层封装好，还提供了按行读取的 `readLine()`。
 - **装饰器模式在 IO 里体现在哪**：`FilterInputStream` 一族（`BufferedInputStream`、`DataInputStream`）正是装饰器——接口不变、层层叠加能力。`new BufferedReader(new InputStreamReader(new FileInputStream(...)))` 是装饰器模式的教科书案例。
 - **为什么必须用 try-with-resources**：`AutoCloseable` 保证异常路径下也会关闭；手写 `finally` 里的 `close()` 一旦自身抛异常，会覆盖业务异常。多个资源会按**逆序关闭**（见[『异常体系是怎样的？受检异常和非受检异常有什么区别？』](/java/basis/#异常体系是怎样的-受检异常和非受检异常有什么区别)）。
@@ -53,7 +53,7 @@ try (InputStream in = new BufferedInputStream(new FileInputStream("a.jpg"));
 - **同步 vs 异步**：BIO/NIO 都由应用自己发起读写（同步）；AIO 由操作系统完成后通知应用（异步）。
 - **阻塞 vs 非阻塞**：BIO 的读写调用会阻塞；NIO 的读写立即返回，没数据就返回 0。
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **NIO 到底是"非阻塞"还是"多路复用"**：这是两个层面。**非阻塞**指单次读写不阻塞；**多路复用**指用一个 `Selector` 同时监听多个通道。NIO 通常把两者一起用，这才是它能以少量线程扛住大量连接的原因。
 - **BIO 为什么撑不住高并发**：线程模型是"一连接一线程"，线程创建与上下文切换都有成本，且线程栈占内存（默认约 1MB）。几千连接就要几千线程，内存与调度都撑不住。
 - **AIO 为什么没有流行起来**：Linux 上原生 AIO 支持不完整、JDK 实现多用 epoll 模拟，性能没显著优于 NIO，还带来更高的编程复杂度；同时基于 NIO 的 Netty 等框架生态已经非常成熟。
@@ -96,7 +96,7 @@ while (true) {
 }
 ```
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **为什么说 `flip()` 最容易踩坑**：写完之后**必须** `flip()` 才能读，否则读的是"从 position 到 limit"的空区间；读完想再写又要 `clear()` 或 `compact()`。漏掉 `clear()` 会让残留数据混进下一次读。
 - **`clear()` 和 `compact()` 有什么区别**：`clear()` 直接丢弃全部内容回到写模式；`compact()` 把**未读数据**搬到自己前面再切回写模式——用于"还没读完就要继续写"的场景。
 - **堆内 Buffer 和直接内存 Buffer 怎么选**：堆内 `allocate()` 分配快、随 GC 回收，但要经过一次"堆内 → 直接内存"的拷贝；`allocateDirect()` 少一次拷贝、适合大量 IO，但分配慢、回收不可控。**高频小量用堆内，长期复用的大缓冲用直接内存**。
@@ -115,7 +115,7 @@ while (true) {
   - `epoll_wait` 直接返回**就绪链表**中的 fd，复杂度 O(1)，与总 fd 数无关。
 - **为什么 epoll 快**：省掉了"每次全量拷贝"与"线性扫描"，只返回就绪项，因此 fd 越多优势越明显。这也是 Nginx、Redis、Netty 在 Linux 上高性能的底层原因。
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **水平触发（LT）和边缘触发（ET）有什么区别**：**LT** 是默认模式——只要缓冲区还有数据没读完，`epoll_wait` 会**持续通知**；**ET** 只在状态**变化**时通知一次，必须一次读到 `EAGAIN`，否则会丢事件。ET 效率更高但写法更严格，要求 fd 设为非阻塞。
 - **epoll 一定比 select 快吗**：不一定。**连接数少且大多活跃**时，select 的全量扫描反而可能更快（省去了 epoll 的红黑树维护开销）；epoll 的优势在**大量连接、少量活跃**的场景。
 - **Java 里怎么用到 epoll**：JDK 在 Linux 上的 `Selector` 默认就是 epoll 实现（`EPollSelectorImpl`）；Netty 还提供了 `EpollEventLoopGroup`，以支持 ET 模式等原生能力。
@@ -161,7 +161,7 @@ try (FileChannel in = FileChannel.open(Paths.get("a.mp4"), StandardOpenOption.RE
 }
 ```
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **零拷贝是"完全没有拷贝"吗**：不是。它省的是**CPU 参与的拷贝**，DMA 拷贝依然存在（数据总得从磁盘到网卡）。更准确的说法是"减少数据在用户态与内核态之间的来回搬运"。
 - **`mmap` 和 `sendfile` 怎么选**：只做"文件 → 网络"转发就用 `sendfile`（省得最干净）；需要**在用户态访问或修改数据**时才用 `mmap`（把文件映射成内存、可直接读写，但要承担缺页与一致性开销）。
 - **Kafka 为什么快，和零拷贝什么关系**：生产者写入页缓存、消费者用 `sendfile` 把页缓存直接送到 socket，全程避开用户态拷贝；再配合**顺序写**与**批量发送**，共同构成它的高吞吐基础。
@@ -186,7 +186,7 @@ public class User implements Serializable {
 }
 ```
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **`transient` 和 `static` 字段会被序列化吗**：都不会。`static` 属于类而不属于对象，不参与；`transient` 被显式排除。反序列化后两者都取"当前类里的值"或类型默认值。
 - **`serialVersionUID` 不一致一定会失败吗**：会抛 `InvalidClassException`。反序列化时 JVM 先比对字节流里记录的值与本地类的值，不一致直接拒绝——这正是它作为"版本闸门"的意义。
 - **序列化有哪些坑**：它**不走构造器**（反序列化由 JVM 直接还原字段）、不受 `final` 约束（`final` 字段也能被反序列化改写）、单例类反序列化会得到**新实例**（除非实现 `readResolve`）。
@@ -210,7 +210,7 @@ public class User implements Serializable {
 - **改用数据格式**：用 JSON（Jackson）、Protobuf 等替换原生序列化。注意 JSON **也不是绝对安全**——Jackson 的多态类型处理历史上同样出过 RCE，因此**不要开启任意类型的多态反序列化**。
 - **依赖治理**：及时升级含 gadget 的库（如老版本 Commons Collections），收紧 classpath 上可用的类。
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **为什么反序列化能执行代码**：因为它**不走构造器**而由 JVM 还原字段，期间会调用一批约定方法——`readObject`、`readObjectNoData`、`readResolve`、`writeReplace`，以及 `finalize`。gadget 链正是利用这些"会被自动调用"的方法串起连锁调用。
 - **`readResolve` 有什么正当用途**：可以在反序列化时**替换返回的对象**，常用于保护单例（返回已有实例）。但它同时也是一条可利用的链。
 - **JDK 9+ 的 `ObjectInputFilter` 怎么用**：通过 `ObjectInputStream.setObjectInputFilter(...)` 或全局 `-Djdk.serialFilter=...` 配置，可按类名白名单、包名模式、最大深度、最大数组长度等维度限制——**白名单比黑名单可靠得多**。

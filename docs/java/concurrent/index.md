@@ -44,7 +44,7 @@ ExecutorService pool = Executors.newFixedThreadPool(4);   // 更推荐直接 new
 pool.submit(() -> System.out.println("pool"));
 ```
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **为什么实际开发不推荐 `new Thread`**：每次创建都新建一个线程且无法复用，并发数不可控，流量一大就可能把机器拖垮；线程池能复用线程、限制并发、统一管理与监控。
 - **`Runnable` 和 `Callable` 有什么区别**：`Callable` 的 `call()` 有返回值且能抛受检异常，`Runnable` 的 `run()` 都不能；`Callable` 需配合 `FutureTask` 或线程池的 `submit` 使用。
 - **`start()` 能被调用两次吗**：不能，第二次抛 `IllegalThreadStateException`；线程一旦结束也不能再启动。
@@ -69,7 +69,7 @@ pool.submit(() -> System.out.println("pool"));
 - `RUNNABLE` --`wait()`--> `WAITING` --`notify()`/`notifyAll()`--> `BLOCKED`（**不是直接回到 `RUNNABLE`**）
 - `RUNNABLE` --`sleep(ms)`/`join(ms)`--> `TIMED_WAITING` --超时--> `RUNNABLE`
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **`wait()` 被唤醒后直接变成 `RUNNABLE` 吗**：不是。`notify()`/`notifyAll()` 只是把它从 `WAITING` 挪到 `BLOCKED`，它还要重新竞争到 `synchronized` 锁才会回到 `RUNNABLE`——**唤醒不等于立刻继续执行**。
 - **`sleep` 和 `wait` 有什么区别**：`sleep` 是 `Thread` 的静态方法、**不释放锁**、到点自动醒；`wait` 是 `Object` 的方法、**会释放锁**、需要被 `notify` 唤醒，且必须在 `synchronized` 块内调用。这个差别是必考。
 - **`BLOCKED` 和 `WAITING` 有什么区别**：`BLOCKED` 是"被动等锁"，`WAITING` 是"主动放弃、等人叫"；前者卡在 `synchronized` 入口，后者由 `wait`/`join`/`park` 主动进入。
@@ -98,7 +98,7 @@ pool.submit(() -> System.out.println("pool"));
 
 怎么选：用不上高级功能就直接 `synchronized`（写法简单、不会忘释放、JVM 还在持续优化）；需要可中断、超时、公平锁或多条件变量时再用 `ReentrantLock`。
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **`synchronized` 是可重入的吗，怎么实现**：是。Monitor 用 `owner` + 重入计数记录，同一线程再次进入就把计数加一、退出时减一，减到 0 才真正释放。
 - **锁升级可逆吗**：**升级链条是单向的**——偏向 → 轻量级 → 重量级，不会降回去（降级收益小、实现也复杂）；但**偏向锁本身可以被撤销**：当另一个线程来竞争时会走撤销流程（另配有批量重偏向、批量撤销的阈值优化），对象于是回到无锁态。
 - **偏向锁为什么被废弃**：它只对"始终单线程访问"的场景有收益，而现代应用大量使用线程池与并发容器，偏向锁的撤销反而成了额外开销，所以 JDK 15（JEP 374）起默认禁用并标记废弃，之后版本移除。
@@ -135,7 +135,7 @@ class Singleton {
 }
 ```
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **双重检查锁为什么必须加 `volatile`**：`new` 不是原子操作，分为分配内存、初始化、把引用赋给变量三步；没有 `volatile` 时第 2、3 步可能重排，别的线程会拿到"引用非空、对象却还没初始化完"的对象。
 - **`volatile` 能替代 `synchronized` 吗**：不能。它只管可见性与有序性，不保证原子性、也不提供互斥；出现"读-改-写"或复合操作时必须用锁或原子类。
 - **`volatile` 和 `AtomicInteger` 有什么区别**：`AtomicInteger` 用 CAS 保证了原子性，`volatile` 只保证可见性；需要计数、累加这类复合操作就得用原子类。
@@ -171,7 +171,7 @@ AtomicStampedReference<Integer> ref = new AtomicStampedReference<>(1, 0);
 ref.compareAndSet(1, 2, 0, 1);
 ```
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **CAS 底层靠什么实现**：靠 CPU 的原子指令（x86 是 `cmpxchg`，多核下加 `lock` 前缀触发缓存一致性协议）；Java 层通过 `Unsafe` 暴露给原子类使用。
 - **CAS 为什么比锁快**：它不挂起线程，没有用户态与内核态之间的切换；但竞争激烈时自旋会白白烧 CPU，这时反而比不上锁。
 - **`LongAdder` 为什么比 `AtomicLong` 快**：`AtomicLong` 让所有线程 CAS 同一个变量，热点集中；`LongAdder` 把值分散到多个 `Cell` 上各自累加，`sum()` 时再汇总，用空间换竞争（JDK 8+）。
@@ -213,7 +213,7 @@ void transfer(Account from, Account to, int amount) {
 }
 ```
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **`synchronized` 的死锁能被中断吗**：不能。等在 `synchronized` 上的线程无法被中断，只能等对方释放；用 `ReentrantLock.lockInterruptibly()` 或 `tryLock(timeout)` 才有自救的机会。
 - **活锁和饥饿是什么**：死锁是"互相等"，活锁是"互相让"——线程都在运行却始终推进不了；饥饿是某个线程长期抢不到资源，比如非公平锁下被不断插队。
 - **只有 `synchronized` 会死锁吗**：不是。任何"持有并等待"的排他资源都会——`ReentrantLock`、数据库行锁、乃至连接池耗尽（本质是池资源的循环等待）都一样。
@@ -239,7 +239,7 @@ void transfer(Account from, Account to, int amount) {
 - **对象终结规则**：对象构造完成 happens-before 它的 `finalize()` 开始。
 - **传递性**：A happens-before B、B happens-before C ⇒ A happens-before C。
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **`happens-before` 是时间上的先后吗**：不是。它是**可见性保证**——只要规则成立，哪怕 A 在墙上时钟上晚于 B，A 的结果也必须对 B 可见；反过来，不满足规则的两次操作，JVM 可以任意重排。
 - **`as-if-serial` 是什么**：单线程内，无论怎么重排，执行结果必须与顺序执行一致。它保证重排不破坏单线程语义，但**不保证多线程**——多线程的重排由 `happens-before` 约束。
 - **为什么 `synchronized` 能保证可见性**：它既满足监视器锁规则（解锁前的写对后续加锁者可见），又会在临界区前后插入内存屏障，所以退出时的修改都会刷出去。
@@ -276,7 +276,7 @@ public String format(Date d) {
 }
 ```
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **key 为什么设计成弱引用**：若 key 是强引用，`ThreadLocal` 实例即使不再使用也会被 `ThreadLocalMap` 一直引用，泄漏只会更严重；弱引用至少让 key 能被回收，属于两害相权——但**泄漏并没有被消除**，所以仍要 `remove()`。
 - **`ThreadLocal` 的值会传给子线程吗**：默认不会，子线程拿到的是自己的空副本。`InheritableThreadLocal` 能让子线程继承父线程的值，但在**线程池下会失效**（线程被复用、不会重新创建），此时需要 `TransmittableThreadLocal` 之类的方案。
 - **`ThreadLocal` 为什么能减少锁竞争**：它用空间换隔离——每个线程操作自己的副本，就不需要共享，也就不需要同步。典型用法是给每个线程分配独立的 `SimpleDateFormat`（它本身线程不安全）。
@@ -321,7 +321,7 @@ ThreadPoolExecutor pool = new ThreadPoolExecutor(
 );
 ```
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **为什么队列满之前不会创建非核心线程**：这是 `ThreadPoolExecutor` 的既定逻辑——先入队、队列满才扩容，目的是尽量用少量线程消化突发流量；理解这点才能解释"线程数为什么上不去"。
 - **`Executors` 的工厂方法有什么坑**：`newFixedThreadPool` / `newSingleThreadExecutor` 用**无界队列**，任务会无限堆积直到 OOM；`newCachedThreadPool` 的 `maximumPoolSize` 是 `Integer.MAX_VALUE`，可能创建海量线程。所以开发规范要求直接用 `new ThreadPoolExecutor(...)`。
 - **`allowCoreThreadTimeOut(true)` 有什么用**：让核心线程也受 `keepAliveTime` 约束、空闲后回收，适合流量波峰波谷明显的场景。
@@ -358,7 +358,7 @@ int cpuBound = cores + 1;
 int ioBound  = cores * (1 + 2);     // 假设等待时间 / 计算时间 ≈ 2
 ```
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **默认的拒绝策略是哪个**：`AbortPolicy`，抛 `RejectedExecutionException`。所以"线程池会不会丢任务"取决于选的策略，默认不丢但会抛。
 - **`CallerRunsPolicy` 有什么副作用**：会让提交任务的线程（比如 Tomcat 的工作线程）亲自去执行任务、被阻塞；但正因如此它形成了天然反压，保护线程池不被压垮。
 - **为什么不建议用无界队列**：无界队列下 `maximumPoolSize` 形同虚设，任务无限堆积，最终以 `OutOfMemoryError` 收场——这是线上事故的经典成因。
@@ -384,7 +384,7 @@ int ioBound  = cores * (1 + 2);     // 假设等待时间 / 计算时间 ≈ 2
 - **公平与非公平的差别**：公平锁在 `tryAcquire` 里先判断队列中是否有更早的等待者，有就不抢；非公平锁直接 CAS 插队，吞吐更高但可能造成饥饿。
 - **`Condition`**：`ConditionObject` 也是 AQS 的内部类，用它自己的条件队列实现 `await`/`signal`，因此一把 `ReentrantLock` 可以有多个条件队列（`synchronized` 只有一个等待集）。
 
-### 高频延伸（面试官爱追问）
+### 高频延伸
 - **AQS 支持哪两种模式**：独占（`acquire`/`release`，如 `ReentrantLock`）与共享（`acquireShared`/`releaseShared`，如 `Semaphore`、`CountDownLatch`）；`ReentrantReadWriteLock` 两种都用——读锁共享、写锁独占。
 - **为什么用 CLH 队列的变体**：CLH 原本是自旋锁队列，AQS 把它改成"自旋 + `LockSupport.park()` 阻塞"的变体，既保留 FIFO 公平性，又避免纯自旋浪费 CPU。
 - **`CountDownLatch` 和 `CyclicBarrier` 有什么区别**：`CountDownLatch` 基于 AQS 共享模式，计数减到 0 就放行且**不能重置**（一次性）；`CyclicBarrier` 基于 `ReentrantLock` + `Condition` 自行实现，可循环使用，语义是"一组线程互相等待"。
