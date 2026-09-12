@@ -272,7 +272,7 @@ class C implements A, B {
 实现深拷贝的常见方式：
 
 - **重写 `clone()`**：在本类的 `clone()` 中对每个引用字段再调用其 `clone()`。需要链条上每个类都正确实现 `Cloneable`，漏一层就退化成浅拷贝。
-- **序列化 / 反序列化**：把对象写出再读回，天然是深拷贝。要求对象图全部可序列化，性能较差。
+- **序列化 / 反序列化**：把对象写出再读回，天然是深拷贝。要求对象图全部可序列化，性能较差；具体机制见 IO 模块的[『序列化是什么？serialVersionUID 有什么用？』](/java/io/#序列化是什么-serialversionuid-有什么用)。
 - **拷贝构造器或静态工厂**：为每个类写 `new Foo(other)`，显式可控，Effective Java 推荐；但新增字段时要记得同步维护。
 - **JSON 等第三方库转换**：序列化成字符串再反序列化，写起来最简单，但泛型与多态容易失真，性能也一般。
 
@@ -353,7 +353,7 @@ String fast = sb.toString();
 - **`finally` 一定会执行吗**：正常情况下一定执行（含 `return`、抛异常的路径）；但 `System.exit()`、JVM 崩溃时不会。另外 `finally` 中若 `return` 或再次抛异常，会**覆盖**前面的返回值或异常。
 - **`throw` 和 `throws` 有什么区别**：`throw` 是一条语句，抛出一个异常对象；`throws` 出现在方法签名上，声明该方法可能抛出哪些受检异常。
 - **为什么很多框架偏爱非受检异常**：受检异常会污染方法签名、导致层层 `throws` 或空 `catch`；Spring 等框架默认把受检异常包装成非受检，交由上层按需处理。
-- **资源释放怎么写更稳**：JDK 7+ 用 try-with-resources，自动关闭实现 `AutoCloseable` 的资源，替代 `finally` 里手写 `close()`，也避免 `close()` 自身抛异常时吞掉业务异常。
+- **资源释放怎么写更稳**：JDK 7+ 用 try-with-resources，自动关闭实现 `AutoCloseable` 的资源，替代 `finally` 里手写 `close()`，也避免 `close()` 自身抛异常时吞掉业务异常；最常见的流资源写法见 IO 模块的[『字节流和字符流有什么区别？』](/java/io/#字节流和字符流有什么区别)。
 
 ## try-catch-finally 中 return 与 finally 的执行顺序？
 

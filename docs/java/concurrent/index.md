@@ -282,6 +282,7 @@ public String format(Date d) {
 - **`ThreadLocal` 为什么能减少锁竞争**：它用空间换隔离——每个线程操作自己的副本，就不需要共享，也就不需要同步。典型用法是给每个线程分配独立的 `SimpleDateFormat`（它本身线程不安全）。
 - **`ThreadLocal` 和 `synchronized` 是什么关系**：方向相反。`synchronized` 是"多个线程共享一个变量、靠锁串行化"；`ThreadLocal` 是"每个线程各持一份、压根不共享"。
 - **`Entry` 为什么继承弱引用**：`Entry extends WeakReference<ThreadLocal<?>>`，key 走弱引用、value 作为普通字段强引用——这正是泄漏链条的结构性原因。
+- **想深入了解四种引用的差异**：弱引用只是四种引用之一，强 / 软 / 弱 / 虚各自的回收时机与适用场景见 JVM 模块的[『强、软、弱、虚引用有什么区别？』](/java/jvm/#强、软、弱、虚引用有什么区别)。
 
 ## 线程池的核心参数和执行流程是怎样的？
 
