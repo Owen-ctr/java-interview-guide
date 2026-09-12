@@ -7,8 +7,9 @@ export default defineConfig({
   lastUpdated: true,
   cleanUrls: true,
   appearance: true,
-  // 自定义域名 javaoffer.com，GitHub Pages 根路径为 /，故 base 设为 '/'
-  base: '/',
+  // GitHub Pages 项目页部署在 owen-ctr.github.io/java-interview-guide/，
+  // 故 base 必须为子路径 '/java-interview-guide/'，否则 /assets 资源 404。
+  base: '/java-interview-guide/',
   themeConfig: {
     aside: true,
     outline: {
