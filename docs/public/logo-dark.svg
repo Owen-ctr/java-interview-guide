@@ -1,0 +1,8 @@
+<!--
+  品牌标记：Owen 的「O」圆环 + 知识节点（暗色主题版）
+  与 logo.svg 几何完全一致，仅换为亮 indigo 以在深色导航栏上保持对比度。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <circle cx="11" cy="11" r="7.2" stroke="#a8b1ff" stroke-width="3.2"/>
+  <circle cx="18.4" cy="18.4" r="3.1" fill="#a8b1ff"/>
+</svg>

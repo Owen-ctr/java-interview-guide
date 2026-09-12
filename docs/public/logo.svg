@@ -1,0 +1,9 @@
+<!--
+  品牌标记：Owen 的「O」圆环 + 知识节点
+  单色矢量，跨项目通用；本文件为亮色主题版（深 indigo），暗色主题用 logo-dark.svg。
+  换项目复用时只需改 stroke/fill 颜色。几何：24 视口，环 r=7.2 / 线宽 3.2，节点 r=3.1。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <circle cx="11" cy="11" r="7.2" stroke="#3451b2" stroke-width="3.2"/>
+  <circle cx="18.4" cy="18.4" r="3.1" fill="#3451b2"/>
+</svg>

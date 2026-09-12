@@ -1,5 +1,10 @@
 import { defineConfig } from 'vitepress'
 
+// GitHub Pages 项目页部署在 owen-ctr.github.io/java-interview-guide/，
+// 故 base 必须为子路径 '/java-interview-guide/'，否则 /assets 资源 404。
+// 抽成常量是因为 head 里的 favicon 路径不会被自动带上 base（实测），必须显式拼。
+const base = '/java-interview-guide/'
+
 export default defineConfig({
   title: 'Java 面试指南',
   description: '原创 Java 面试题库：知识点梳理 + 高频题 + 详解',
@@ -7,10 +12,12 @@ export default defineConfig({
   lastUpdated: true,
   cleanUrls: true,
   appearance: true,
-  // GitHub Pages 项目页部署在 owen-ctr.github.io/java-interview-guide/，
-  // 故 base 必须为子路径 '/java-interview-guide/'，否则 /assets 资源 404。
-  base: '/java-interview-guide/',
+  base,
+  // favicon：head 里的 href 不会被自动带上 base，必须自己拼（见上方常量）
+  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: `${base}favicon.svg` }]],
   themeConfig: {
+    // 导航栏品牌标记：亮/暗两版，颜色与主题 indigo 一致
+    logo: { light: '/logo.svg', dark: '/logo-dark.svg', alt: 'Java 面试题库' },
     aside: true,
     outline: {
       level: [2, 2],

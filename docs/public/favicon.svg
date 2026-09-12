@@ -1,0 +1,12 @@
+<!--
+  品牌标记 favicon（与 logo.svg 同一几何）
+  内联 prefers-color-scheme，使单个 favicon 在浏览器亮/暗主题下自动换色。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+  <style>
+    svg { color: #3451b2; }
+    @media (prefers-color-scheme: dark) { svg { color: #a8b1ff; } }
+  </style>
+  <circle cx="11" cy="11" r="7.2" stroke="currentColor" stroke-width="3.2"/>
+  <circle cx="18.4" cy="18.4" r="3.1" fill="currentColor"/>
+</svg>
