@@ -6,9 +6,35 @@ export default defineConfig({
   lang: 'zh-CN',
   lastUpdated: true,
   cleanUrls: true,
-  appearance: 'toggle',
+  appearance: true,
+  // 自定义域名 javaoffer.com，GitHub Pages 根路径为 /，故 base 设为 '/'
+  base: '/',
+  // 默认外观设为浅色（太阳）：首次访问若无用户偏好，则写入 light 并移除 dark 类。
+  // 内联脚本在 <head> 同步执行，body 渲染前完成，不会闪烁；切换按钮仍保留。
+  head: [
+    [
+      'script',
+      {},
+      `(() => {
+        try {
+          const KEY = 'vitepress-theme-appearance';
+          let mode = localStorage.getItem(KEY);
+          if (!mode) {
+            mode = 'light';
+            localStorage.setItem(KEY, mode);
+          }
+          if (mode === 'light') {
+            const el = document.documentElement;
+            el.classList.remove('dark');
+            el.setAttribute('data-theme', 'light');
+            el.style.colorScheme = 'light';
+          }
+        } catch (e) {}
+      })();`,
+    ],
+  ],
   themeConfig: {
-    aside: 'right',
+    aside: true,
     outline: {
       level: [2, 3],
       label: '本页题目',
