@@ -215,6 +215,50 @@ byte[] data = cache.get();         // 可能已被回收
 - **软引用什么时候被回收，能拿它做缓存吗**：JVM 会在**即将抛出 `OutOfMemoryError` 之前**清理软引用，因此 `get()` 不保证有值、必须判空，也就不能持有"必要数据"。作为缓存主力也不推荐——回收时机不可控，现代实践更常用 `Caffeine`、`Guava` 这类带容量与淘汰策略的缓存库。
 - **四种引用分别在什么场景用**：强引用是默认；软引用做内存敏感的缓存；弱引用做"附属信息"（`WeakHashMap`、`ThreadLocal`）；虚引用做资源回收通知（`Cleaner`、堆外内存）。
 
+## GC 日志怎么看？常用参数有哪些？
+
+结论：GC 日志的**开启方式在 JDK 9 变了**——JDK 8 用 `-XX:+PrintGCDetails -Xloggc:<file>`，**JDK 9 起统一为 `-Xlog:gc*:<file>`**。读日志只需抓住三件事：**回收前后各区占用、单次耗时、以及老年代能否回落**。
+
+开启与查看（注意版本差异）：
+
+- **JDK 8**：`-XX:+PrintGCDetails`（打印详情）、`-XX:+PrintGCDateStamps`（带时间戳）、`-Xloggc:/path/gc.log`（输出到文件）。
+- **JDK 9+**：统一日志框架，如 `-Xlog:gc*:file=/path/gc.log:time,uptime,level,tags`；旧的 `PrintGCDetails` 等参数已被取代（部分仍兼容但会打弃用告警）。
+- **在线快速看**：`jstat -gcutil <pid> 1000` 每秒一行，给出各区占用百分比与 YGC/FGC 次数、总耗时——排查时通常**先用它定位，再去看详细日志**。
+
+一条日志该看什么（以 JDK 8 的 `PSYoungGen` 为例）：
+
+- **回收类型**：是 `GC`（Minor / Young）还是 `Full GC`。只有 `Full GC` 涉及老年代，也才是"停顿抖动"的常见来源。
+- **回收前后占用**：`[PSYoungGen: 8192K->1024K(9216K)]` 表示新生代从 8192K 降到 1024K、总容量 9216K；后面的 `[ParOldGen: ...]` 与 `[Metaspace: ...]` 同理。
+- **整体变化**：行末的 `10000K->2048K(19456K), 0.0123456 secs` 是全堆回收前后的占用与本次耗时。
+- **判读口径**：**老年代回收后能否明显回落**是关键分水岭——回不去说明对象真被强引用牵着（怀疑泄漏）；能回落但很快又满，说明是**堆偏小或对象创建太快**（考虑调堆、优化对象占用）。
+
+```bash
+# JDK 8：输出 GC 详情到文件
+java -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:/var/log/app/gc.log -jar app.jar
+
+# JDK 9+：统一日志（注意接口与 JDK 8 完全不同）
+java -Xlog:gc*:file=/var/log/app/gc.log:time,uptime,level,tags -jar app.jar
+
+# 在线观察：每秒一行汇总，先靠它定位问题区间
+jstat -gcutil <pid> 1000
+```
+
+常用参数（按用途分组）：
+
+- **堆大小**：`-Xms`（初始）、`-Xmx`（上限）——**生产建议设成相等**。
+- **新生代**：`-Xmn`，或 `-XX:NewRatio`、`-XX:SurvivorRatio`。
+- **元空间**：`-XX:MetaspaceSize`（首次 Full GC 阈值）、`-XX:MaxMetaspaceSize`。
+- **收集器**：`-XX:+UseG1GC`、`-XX:+UseParallelGC`、`-XX:MaxGCPauseMillis`（G1 的目标停顿）。
+- **日志**：见上，按版本选择。
+- **OOM 现场**：`-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/path`——**强烈建议所有生产服务都配上**，否则 OOM 之后没有现场。
+
+### 高频延伸（面试官爱追问）
+- **`-Xms` 和 `-Xmx` 为什么要设成一样**：核心是**行为可预测**。不固定时堆会**按需扩容**，运行中被迫扩堆会带来额外的内存申请与 GC 时机波动（默认堆的回缩并不积极，所以"伸缩"里真正要防的是**扩**）；固定下来既能避开这类抖动，也能更早暴露内存问题，例如"跑久了才 OOM"这类难查问题。
+- **看到 Full GC 频繁，先调堆还是先查泄漏**：**先看老年代回收后能否回落**。能回落 → 大概率是堆或新生代偏小，可以调参数；回不去 → 基本是泄漏，调多大都没用，必须取堆快照排查（见[『线上 OOM 或 GC 频繁，你会怎么排查？』](#线上-oom-或-gc-频繁-你会怎么排查)）。
+- **新生代是不是设大一点更好**：不一定。新生代大 → Minor GC 频率降低，但**单次 Minor GC 耗时变长**（要扫、要复制更多对象），且挤压老年代、可能更容易触发 Full GC。没有通解，只能压测。
+- **JDK 9 之后旧参数还能用吗**：部分仍兼容但会打弃用告警（如 `PrintGCDetails`），**建议直接迁移到 `-Xlog`**。它的语法是 `-Xlog:<tag>=<level>:<output>:<decorators>`，可按标签与级别精细控制，比旧参数灵活得多。
+- **GC 日志要不要长期保留**：要，而且建议**按大小滚动**——`-Xlog` 支持 `filecount` 与 `filesize`（如 `-Xlog:gc*:file=gc.log:time:filecount=5,filesize=10M`）。线上事故常常是"跑几小时后才开始抖"，没有历史日志就只能等复现。
+
 ## 线上 OOM 或 GC 频繁，你会怎么排查？
 
 结论：先**明确现象与范围**（哪种 OOM、哪个实例、从何时开始），再**保留现场**（自动 dump + `jstat` 观察），最后**定位对象与代码**（MAT 看支配树、`jstack` 看线程栈）。切忌一上来就重启——现场没了，问题还会再来。
