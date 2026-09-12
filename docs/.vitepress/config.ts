@@ -17,14 +17,38 @@ export default defineConfig({
       label: '本页题目',
     },
     sidebar: [
-      { text: 'Java 基础', link: '/java/basis/' },
-      { text: 'Java 集合', link: '/java/collection/' },
-      { text: 'Java 并发', link: '/java/concurrent/' },
-      { text: 'JVM', link: '/java/jvm/' },
-      { text: '数据库', link: '/database/' },
-      { text: '框架', link: '/framework/' },
-      { text: '分布式', link: '/distributed/' },
+      {
+        text: 'Java',
+        link: '/java/',
+        items: [
+          { text: 'Java 基础', link: '/java/basis/' },
+          { text: '集合', link: '/java/collection/' },
+          { text: '并发编程', link: '/java/concurrent/' },
+          { text: 'IO', link: '/java/io/' },
+          { text: 'JVM', link: '/java/jvm/' },
+        ],
+      },
+      {
+        text: '数据库',
+        link: '/database/',
+        items: [
+          { text: 'MySQL', link: '/database/mysql/' },
+          { text: 'Redis', link: '/database/redis/' },
+        ],
+      },
+      {
+        text: '框架',
+        link: '/framework/',
+        items: [
+          { text: 'Spring', link: '/framework/spring/' },
+          { text: 'SpringMVC', link: '/framework/springmvc/' },
+          { text: 'SpringBoot', link: '/framework/springboot/' },
+          { text: 'MyBatis', link: '/framework/mybatis/' },
+        ],
+      },
       { text: '系统设计', link: '/system-design/' },
+      { text: '分布式', link: '/distributed/' },
+      { text: '高性能 & 高可用', link: '/high-availability/' },
     ],
     search: {
       provider: 'local',

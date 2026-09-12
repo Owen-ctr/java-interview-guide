@@ -1,0 +1,5 @@
+# MySQL
+
+<Badge type="info" text="模块：MySQL" />
+
+本模块覆盖 MySQL 索引、事务、锁、日志、分库分表等面试常考点，题目待补充。

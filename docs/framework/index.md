@@ -1,5 +1,10 @@
 # 框架
 
-<Badge type="info" text="模块：框架（Spring / MyBatis）" />
+<Badge type="info" text="大类：框架" />
 
-本模块覆盖 Spring 核心机制与 MyBatis 面试常考点。
+Java 主流框架，按 Spring、SpringMVC、SpringBoot、MyBatis 分模块整理。
+
+- [Spring](./spring/)
+- [SpringMVC](./springmvc/)
+- [SpringBoot](./springboot/)
+- [MyBatis](./mybatis/)

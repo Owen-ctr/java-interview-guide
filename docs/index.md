@@ -13,7 +13,7 @@ hero:
     #   link: /java/concurrent/
 features:
   - title: 知识点模块
-    details: 按 Java 基础 / 并发 / 数据库等主题分模块，体系清晰，知道自己在哪。
+    details: 按 Java / 数据库 / 框架等大类组织，大类下再分模块，体系清晰，知道自己在哪。
   - title: 题目导向
     details: 以「题」为单元组织，每题标注难度（基础 / 进阶 / 深入），检索快。
   - title: 两层答案
