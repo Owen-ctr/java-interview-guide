@@ -197,6 +197,99 @@ public static void main(String[] args) {
 - **`? extends T` 与 `? super T` 怎么选**：生产者用 `extends`、消费者用 `super`（PECS 原则）。`extends` 侧只能读（元素可视为 `T`），`super` 侧只能写（可安全放入 `T` 及其子类）。
 - **泛型数组为什么被禁止**：若允许，`List<String>[]` 与 `List<Integer>[]` 擦除后都是 `List[]`，就能通过父类引用放进错误类型的元素，破坏类型安全，因此干脆禁止。
 
+## 反射是什么？有哪些用法和代价？
+
+结论：反射（Reflection）让程序在**运行时**获取类的信息并操作它——创建实例、调用方法、读写字段，即使这些在编译期并不知道。它是 `java.lang.reflect` 提供的能力，也是 Spring、MyBatis、动态代理等框架的地基。
+
+获取 `Class` 对象的三种方式：
+
+- **`类名.class`**：编译期已知类型，最安全、性能最好，且**不触发类初始化**。
+- **`对象.getClass()`**：已经有实例时用。
+- **`Class.forName("全限定名")`**：用字符串形式的类名，**会触发类的初始化**（执行静态代码块）；另有 `ClassLoader.loadClass` 只加载不初始化。
+
+常用操作：
+
+- **创建实例**：`clazz.getDeclaredConstructor().newInstance()`（`Class.newInstance()` 自 JDK 9 起已废弃）。
+- **调用方法**：`clazz.getMethod("name", 参数类型...)` → `method.invoke(实例, 参数...)`。
+- **读写字段**：`clazz.getDeclaredField("name")`，私有字段需 `field.setAccessible(true)`。
+- **读取泛型与注解**：`getGenericSuperclass()` 取泛型签名、`getAnnotation(...)` 取注解——**注解就是靠这一步才有意义**（见[『注解是什么？元注解有哪些？』](#注解是什么-元注解有哪些)）。
+
+代价与风险：
+
+- **性能开销**：反射调用要经历方法解析、参数装箱与访问检查，比直接调用慢，也更难被 JIT 内联。热点路径应**缓存 `Method`/`Field` 对象**，或改用 `MethodHandle`。
+- **破坏封装**：能读写私有成员、甚至改写 `final` 字段（如强行改 `String` 的 `value`），**不可依赖**；JDK 9 模块化后核心包的反射访问受限（JDK 16 起默认强封装）。
+- **编译期失去检查**：类名、方法名写错只能在运行时暴露，抛 `ClassNotFoundException` / `NoSuchMethodException`。
+- **安全风险**：反序列化漏洞的核心机制之一就是反射调用（见 IO 模块的[『反序列化为什么会有安全风险？』](/java/io/#反序列化为什么会有安全风险)）。
+
+```java
+Class<?> clazz = Class.forName("com.example.User");   // 会触发类初始化
+
+// 创建实例（JDK 9 起的推荐写法，Class.newInstance() 已废弃）
+Object user = clazz.getDeclaredConstructor().newInstance();
+
+// 调用方法
+Method setter = clazz.getMethod("setName", String.class);
+setter.invoke(user, "Tom");
+
+// 读写私有字段
+Field field = clazz.getDeclaredField("password");
+field.setAccessible(true);                            // 抑制访问检查
+field.set(user, "secret");
+
+// 注解只有在被反射读取时才"起作用"
+if (clazz.isAnnotationPresent(MyAnnotation.class)) {
+    MyAnnotation anno = clazz.getAnnotation(MyAnnotation.class);
+}
+```
+
+### 高频延伸（面试官爱追问）
+- **反射到底用在哪**：Spring 的依赖注入与 Bean 创建、MyBatis 把结果集映射成对象、JDK 动态代理（`Proxy.newProxyInstance`）与 CGLIB、JUnit 扫描测试方法、Jackson/Gson 的序列化——**几乎所有"用配置替代硬编码"的场景都靠它**。
+- **`Class.forName` 和 `ClassLoader.loadClass` 有什么区别**：前者默认**会初始化**类（触发静态代码块），后者只加载不初始化。JDBC 老代码用 `Class.forName` 正是为了触发驱动类的静态块完成注册。
+- **反射慢在哪，怎么优化**：慢在方法解析、参数装箱、访问检查，以及难以内联。优化手段是**缓存 `Method`/`Field`/`Constructor`**（避免每次查找）、必要时用 `setAccessible(true)` 跳过检查，极端热路径改用 `MethodHandle`。业务代码里的这点开销通常可忽略。
+- **`getMethod` 和 `getDeclaredMethod` 有什么区别**：`getMethod` 只能拿到 **public** 方法（含继承来的）；`getDeclaredMethod` 能拿到本类声明的**所有**方法（含 private），但**不含继承的**。字段同理。
+- **为什么 `invoke` 抛的是 `InvocationTargetException`**：它把目标方法**真正抛出的异常包了一层**，必须用 `getCause()` 取出原始异常——否则日志里全是 `InvocationTargetException`，排查时极易被误导。
+
+## 注解是什么？元注解有哪些？
+
+结论：注解（Annotation）是**贴在代码上的"标签"**——它本身**不会做任何事**，必须由**反射**（或编译期注解处理器）读取后才产生作用。这与"注解看起来能自动生效"的直觉正好相反。
+
+- **本质**：注解是继承 `java.lang.annotation.Annotation` 的特殊接口，用 `@interface` 声明；所谓"属性"其实就是接口方法。
+- **三大用途**：给编译器看的（`@Override`、`@SuppressWarnings`）、给框架看的（`@Transactional`、`@Test`）、生成文档或代码（`@Deprecated`、Lombok）。
+- **读取方式**：**运行时靠反射**（`getAnnotation` / `isAnnotationPresent`，前提是 `@Retention(RUNTIME)`）；**编译期靠注解处理器**（Lombok、MapStruct 走的是这条路）。
+- **默认值**：注解属性可声明 `default`，不写就取默认值。
+
+四种元注解（用来修饰注解的注解）：
+
+- **`@Retention`**：保留到哪个阶段——`SOURCE`（源码级，编译即丢，如 `@Override`）/ `CLASS`（保留在 class 文件但运行时读不到，**默认值**）/ `RUNTIME`（运行时可通过反射读取，**自定义注解几乎都要它**）。
+- **`@Target`**：能贴在哪里——`TYPE`、`METHOD`、`FIELD`、`PARAMETER`、`CONSTRUCTOR` 等；不写则默认可贴任意位置。
+- **`@Documented`**：是否被包含进 javadoc。
+- **`@Inherited`**：注解能否被子类继承（**只对类注解生效**）。
+- 另有 **`@Repeatable`**（JDK 8+），允许同一个注解在同一位置重复贴多次。
+
+```java
+@Retention(RetentionPolicy.RUNTIME)      // 必须 RUNTIME，否则反射读不到
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Documented
+public @interface MyAnnotation {
+    String value() default "default";    // 属性实为方法，可给默认值
+    int order() default 0;
+}
+
+@MyAnnotation(value = "demo", order = 1)
+public class User { /* ... */ }
+
+// 只有被反射读到时，注解才"起作用"
+MyAnnotation a = User.class.getAnnotation(MyAnnotation.class);
+System.out.println(a.value());           // demo
+```
+
+### 高频延伸（面试官爱追问）
+- **注解为什么能"自动生效"**：它不能。`@Transactional` 之所以能开事务，是 Spring 用反射（或字节码增强）读到它之后动态生成代理、织入事务逻辑；把注解贴在一个**不受 Spring 管理**的类上，它毫无作用。**"注解 + 反射 = 框架"**机制侧见[『反射是什么？有哪些用法和代价？』](#反射是什么-有哪些用法和代价)，这也正是这两题总被一起问的原因。
+- **`@Retention` 的三个级别怎么选**：需要运行时反射读取 → `RUNTIME`；只给编译期工具用（如 `@Override`）→ `SOURCE`；默认的 `CLASS` 实际很少用（用户代码拿不到）。**忘了写 `RUNTIME`、导致反射读不到**，是自定义注解最常见的新手坑。
+- **`@Inherited` 有什么限制**：只对**类**注解有效（方法和字段上的注解不会被继承），且只影响 `getAnnotation` 的结果——子类自己声明的同名注解仍会覆盖父类。
+- **`@Override` 为什么只用 `SOURCE` 就够**：它纯粹是给编译器做检查的（确认确实在重写父类方法），不需要写进 class 文件、更不需要运行时读取。
+- **注解影响性能吗**：反射读取注解有开销，所以框架通常会在**启动时一次性扫描并缓存**（如 Spring 的 `AnnotationMetadata`），而不是每次调用都读——这样它才敢用在核心链路上。
+
 ## 重载（Overload）和重写（Override）有什么区别？
 
 结论：重载发生在**同一个类**内，靠**参数列表不同**区分同名方法，绑定在**编译期**（静态分派）；重写发生在**子类**，方法签名与父类完全相同，绑定在**运行期**（动态分派）。
