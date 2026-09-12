@@ -17,78 +17,14 @@ export default defineConfig({
       label: '本页题目',
     },
     sidebar: [
-      {
-        text: 'Java 基础',
-        collapsed: false,
-        items: [
-          { text: '概览', link: '/java/basis/' },
-          { text: '字符串与 Object', link: '/java/basis/string-object' },
-          { text: '面向对象与语言特性', link: '/java/basis/oo-lang' },
-        ],
-      },
-      {
-        text: 'Java 集合',
-        collapsed: false,
-        items: [
-          { text: '概览', link: '/java/collection/' },
-          { text: 'Map 集合', link: '/java/collection/map' },
-          { text: 'List / Set 与迭代', link: '/java/collection/list-set-iterator' },
-        ],
-      },
-      {
-        text: 'Java 并发',
-        collapsed: false,
-        items: [
-          { text: '概览', link: '/java/concurrent/' },
-          { text: '线程与锁', link: '/java/concurrent/thread-lock' },
-          { text: '线程池与原子类', link: '/java/concurrent/pool-atomic' },
-        ],
-      },
-      {
-        text: 'JVM',
-        collapsed: false,
-        items: [
-          { text: '概览', link: '/java/jvm/' },
-          { text: '内存与 GC', link: '/java/jvm/memory-gc' },
-          { text: '类加载', link: '/java/jvm/classload' },
-        ],
-      },
-      {
-        text: '数据库',
-        collapsed: false,
-        items: [
-          { text: '概览', link: '/database/' },
-          { text: 'MySQL 索引', link: '/database/mysql-index' },
-          { text: 'MySQL 事务', link: '/database/mysql-tx' },
-          { text: 'Redis 与分库分表', link: '/database/redis-sharding' },
-        ],
-      },
-      {
-        text: '框架',
-        collapsed: false,
-        items: [
-          { text: '概览', link: '/framework/' },
-          { text: 'Spring 核心', link: '/framework/spring-core' },
-          { text: 'MyBatis', link: '/framework/mybatis' },
-        ],
-      },
-      {
-        text: '分布式',
-        collapsed: false,
-        items: [
-          { text: '概览', link: '/distributed/' },
-          { text: '理论与锁事务', link: '/distributed/theory-lock-tx' },
-          { text: 'ID 与路由', link: '/distributed/id-routing' },
-        ],
-      },
-      {
-        text: '系统设计',
-        collapsed: false,
-        items: [
-          { text: '概览', link: '/system-design/' },
-          { text: '设计实战', link: '/system-design/design' },
-        ],
-      },
+      { text: 'Java 基础', link: '/java/basis/' },
+      { text: 'Java 集合', link: '/java/collection/' },
+      { text: 'Java 并发', link: '/java/concurrent/' },
+      { text: 'JVM', link: '/java/jvm/' },
+      { text: '数据库', link: '/database/' },
+      { text: '框架', link: '/framework/' },
+      { text: '分布式', link: '/distributed/' },
+      { text: '系统设计', link: '/system-design/' },
     ],
     search: {
       provider: 'local',
