@@ -2,6 +2,25 @@
 
 本模块覆盖 Java 语言基础、面向对象、字符串、异常等面试常考点。
 
+## == 和 equals 有什么区别？
+
+核心结论：`==` 的语义由 Java 语言规定、不可被类重写——作用于基本类型时比较数值，作用于引用类型时比较两个引用是否指向同一个对象（引用同一性）。`equals` 是 `Object` 定义的方法，默认实现即 `return (this == obj)`，因此未重写的类，`equals` 与 `==` 对引用类型完全等价；只有 `String`、`Integer` 以及正确重写了 `equals` 的类，才会转而比较对象的"逻辑内容"。二者真正的区别来自 `equals` 是否被正确重写，`equals` 并不天然比较内容。
+
+从语义上看：
+
+- **`==` 比较值或引用，且不可重写**：对基本类型（`int`、`long`、`double` 等）比较其数值；对引用类型比较两个引用是否指向同一对象，与对象内部状态无关。
+- **`equals` 的语义可由类自定义**：`Object.equals` 默认比较引用，子类可重写以定义逻辑相等（如比较字段）。`String`、`Integer` 等已重写，故按内容比较。
+
+需注意：`equals` 能否比较内容，取决于该类是否提供了相应的重写实现；未重写的类用 `equals` 与用 `==` 没有区别。
+
+### 高频延伸（面试官爱追问）
+- **Integer 缓存**：`Integer a = 127, b = 127` 时 `a == b` 为 `true`，换成 `128` 却为 `false`。原因：`Integer` 对 `-128~127` 做了自动装箱缓存，区间内取值复用同一对象；超出范围每次自动装箱都新建对象，引用不同。所以包装类型判等应使用 `equals`，而不是 `==`。
+- **String 示例**：`String s1 = new String("abc")` 与 `String s2 = "abc"`，`s1 == s2` 为 `false`、`s1.equals(s2)` 为 `true`。关键在于**是否复用同一个对象**：字面量 `"abc"` 纳入字符串常量池（`s2` 指向池对象），而 `new String(...)` 必然新建一个独立对象（`s1` 指向它）。二者都在堆中（JDK 7 起字符串常量池也已移入堆），差异在**对象同一性**而非所在区域，因此二者不是同一个对象，故 `==`（比引用）为 `false`，而 `.equals`（比字符内容）为 `true`。这正是"`==` 比引用、`equals` 比内容"的典型例证。
+- **拆箱混用的隐蔽坑**：`int a = 128; Integer b = 128;` 时 `a == b` 为 `true`，而 `Integer c = 128, d = 128;` 时 `c == d` 为 `false`。根因是 `==` 的语义取决于操作数类型——前者一边是基本类型、一边是包装类型，`==` 触发自动拆箱后按数值比较（故为 `true`）；后者两边都是 `Integer`（引用类型），不拆箱、直接比引用，而 `128` 超出装箱缓存范围（`-128~127`），`c`、`d` 各自新建、引用不同（故为 `false`）。同样是"两个 128"，`==` 一个比的是值、一个比的是引用，这正是它最隐蔽之处，也说明包装类型判等应当用 `equals`。
+- **不止 Integer 有缓存**：`Byte`、`Short`、`Integer`、`Long` 缓存 `-128~127`（`Byte` 恰好覆盖全部取值），`Character` 缓存 `0~127`，`Integer` 的上界还可用 `-XX:AutoBoxCacheMax` 调大；而 `Float`、`Double` 没有缓存，因此 `Double x = 1.0, y = 1.0;` 的 `x == y` 恒为 `false`。
+- **null 安全**：`null.equals(x)` 会抛 `NullPointerException`，而 `==` 不会；判空应写成 `null == x`，或直接用 null 安全的 `Objects.equals(a, b)`。
+- **与 hashCode 的联动**：`equals` 能定义内容相等，但哈希集合（`HashMap`、`HashSet`）先以 `hashCode` 定位桶、再以 `equals` 判定相等；若只重写 `equals` 而不重写 `hashCode`，会出现"存入后无法取出"的异常（详见下一题）。
+
 ## 为什么重写 equals() 必须重写 hashCode()？
 
 Java 规范对 `equals` 与 `hashCode` 存在强约束：如果两个对象根据 `equals` 比较相等，那么它们的 `hashCode` 必须相等；反之并不要求——`hashCode` 相等的对象 `equals` 可以不等，这对应哈希冲突，是被允许的。
@@ -22,3 +41,4 @@ Java 规范对 `equals` 与 `hashCode` 存在强约束：如果两个对象根�
 - 为什么 `String`、`Integer` 等包装类适合做 `HashMap` 的 key？因为它们正确重写了 `equals` 与 `hashCode`，且不可变，哈希值稳定。
 - 重写 `equals` 本身还需满足五条契约：自反、对称、传递、一致性，以及 `x.equals(null)` 必须返回 `false`。
 - `hashCode` 直接返回常量（如 `return 1`）合法吗？合法——契约只要求相等的对象哈希相同；但所有对象会挤进同一个桶，`HashMap` 退化为链表/红黑树，查询从 O(1) 降为 O(log n)/O(n)。契约正确不等于实现可用。
+
