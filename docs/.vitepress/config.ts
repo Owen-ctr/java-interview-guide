@@ -20,6 +20,7 @@ export default defineConfig({
       {
         text: 'Java',
         link: '/java/',
+        collapsed: true,
         items: [
           { text: 'Java 基础', link: '/java/basis/' },
           { text: '集合', link: '/java/collection/' },
@@ -31,6 +32,7 @@ export default defineConfig({
       {
         text: '数据库',
         link: '/database/',
+        collapsed: true,
         items: [
           { text: 'MySQL', link: '/database/mysql/' },
           { text: 'Redis', link: '/database/redis/' },
@@ -39,6 +41,7 @@ export default defineConfig({
       {
         text: '框架',
         link: '/framework/',
+        collapsed: true,
         items: [
           { text: 'Spring', link: '/framework/spring/' },
           { text: 'SpringMVC', link: '/framework/springmvc/' },
