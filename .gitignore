@@ -16,3 +16,4 @@ docs/.vitepress/cache
 
 # 项目约定文档（本地参考，不入库）
 CODEBUDDY.md
+AGENTS.md
