@@ -10,6 +10,12 @@
 
 题目按「线程 → 锁 → JMM → 工具 → 线程池 → AQS」组织，由浅入深。
 
+**阅读路线**：按由浅入深分三档，初学者顺「入门必答 → 进阶追问 → 深入原理」读即可。
+
+- **入门必答**：[『创建线程有哪几种方式？』](#创建线程有哪几种方式)、[『线程有哪些状态？状态之间如何转换？』](#线程有哪些状态-状态之间如何转换)、[『synchronized 的原理是什么？它和 ReentrantLock 有什么区别？』](#synchronized-的原理是什么-它和-reentrantlock-有什么区别)
+- **进阶追问**：[『volatile 能保证什么？为什么不能保证原子性？』](#volatile-能保证什么-为什么不能保证原子性)、[『CAS 是什么？ABA 问题如何解决？』](#cas-是什么-aba-问题如何解决)、[『死锁的四个必要条件是什么？如何避免和排查？』](#死锁的四个必要条件是什么-如何避免和排查)、[『ThreadLocal 的原理是什么？为什么会导致内存泄漏？』](#threadlocal-的原理是什么-为什么会导致内存泄漏)、[『线程池的核心参数和执行流程是怎样的？』](#线程池的核心参数和执行流程是怎样的)、[『线程池的拒绝策略有哪些？线程数怎么设置？』](#线程池的拒绝策略有哪些-线程数怎么设置)
+- **深入原理**：[『JMM 是什么？happens-before 有哪些规则？』](#jmm-是什么-happens-before-有哪些规则)、[『CompletableFuture 是什么？和 Future 有什么区别？』](#completablefuture-是什么-和-future-有什么区别)、[『AQS 是什么？ReentrantLock 是怎么基于它实现的？』](#aqs-是什么-reentrantlock-是怎么基于它实现的)、[『CountDownLatch、CyclicBarrier、Semaphore 有什么区别？』](#countdownlatch、cyclicbarrier、semaphore-有什么区别)
+
 ## 创建线程有哪几种方式？
 
 结论：本质只有一种——`Thread.start()`。其它说法（实现 `Runnable`、实现 `Callable`、线程池）都只是"怎么把任务交给线程"的不同包装——面试常问的「有哪几种创建方式」，答案就是下面这四条。实际开发中应该用**线程池**，而不是手动 `new Thread`。

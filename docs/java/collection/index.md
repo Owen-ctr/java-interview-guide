@@ -12,6 +12,12 @@
 | `HashSet` | 底层就是 `HashMap` | 无序 | 元素可 null | 否 | 去重 |
 | `ConcurrentHashMap` | 数组 + 链表 + 红黑树 | 无序 | key/value 都不允许 | 是 | 并发读写 |
 
+**阅读路线**：按由浅入深分三档，初学者顺「入门必答 → 进阶追问 → 深入原理」读即可。
+
+- **入门必答**：[『ArrayList 和 LinkedList 有什么区别？』](#arraylist-和-linkedlist-有什么区别)、[『HashMap、LinkedHashMap、TreeMap、Hashtable 有什么区别？怎么选？』](#hashmap、linkedhashmap、treemap、hashtable-有什么区别-怎么选)、[『HashMap 的底层实现原理是什么？』](#hashmap-的底层实现原理是什么)
+- **进阶追问**：[『ArrayList 的扩容机制是怎样的？为什么是 1.5 倍？』](#arraylist-的扩容机制是怎样的-为什么是-1-5-倍)、[『ConcurrentHashMap 是如何保证线程安全的？』](#concurrenthashmap-是如何保证线程安全的)、[『遍历集合时删除元素为什么会抛 ConcurrentModificationException？』](#遍历集合时删除元素为什么会抛-concurrentmodificationexception)、[『Comparable 和 Comparator 有什么区别？』](#comparable-和-comparator-有什么区别)
+- **深入原理**：[『HashMap 为什么线程不安全？』](#hashmap-为什么线程不安全)、[『Arrays.asList()、subList() 返回的是视图还是拷贝？有哪些坑？』](#arrays-aslist-、sublist-返回的是视图还是拷贝-有哪些坑)
+
 ## ArrayList 和 LinkedList 有什么区别？
 
 结论：`ArrayList` 基于**动态数组**，随机访问 O(1)、中间插入删除 O(n)；`LinkedList` 基于**双向链表**，随机访问 O(n)、已知节点位置时改指针即可 O(1)。**绝大多数场景选 `ArrayList`**。
