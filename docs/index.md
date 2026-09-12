@@ -4,6 +4,10 @@ hero:
   name: Java 面试题库
   text: 面向 Java 后端面试的系统性题库
   tagline: 按知识点模块组织，每题直接作答并附面试官追问方向；以 JDK 8 为基线，版本差异逐处标注。
+  image:
+    light: /logo-hero.svg
+    dark: /logo-hero-dark.svg
+    alt: Java 面试题库
   actions:
     - theme: brand
       text: 开始阅读

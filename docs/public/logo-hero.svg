@@ -1,0 +1,10 @@
+<!--
+  首页 hero 大图（亮色主题版）
+  内容就是品牌标记本体的等比放大（24 视口 ×7.047），与导航栏 logo 完全同构。
+  viewBox 已收紧到标记外接框 +8 单位留白（标记占 136.025/152 ≈ 89.5%），
+  因为 VitePress 给 hero 图片盒子的上限只有 320px，画布留白会直接浪费掉显示尺寸。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="52 52 152 152" fill="none" aria-hidden="true">
+  <circle cx="122" cy="122" r="50.75" stroke="#3451b2" stroke-width="22.55"/>
+  <circle cx="174.15" cy="174.15" r="21.85" fill="#3451b2"/>
+</svg>

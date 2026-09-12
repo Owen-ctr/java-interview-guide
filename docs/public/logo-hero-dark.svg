@@ -1,0 +1,8 @@
+<!--
+  首页 hero 大图（暗色主题版）
+  与 logo-hero.svg 几何、裁剪框完全一致，仅换为亮 indigo。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="52 52 152 152" fill="none" aria-hidden="true">
+  <circle cx="122" cy="122" r="50.75" stroke="#a8b1ff" stroke-width="22.55"/>
+  <circle cx="174.15" cy="174.15" r="21.85" fill="#a8b1ff"/>
+</svg>
