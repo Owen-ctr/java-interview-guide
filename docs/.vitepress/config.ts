@@ -46,6 +46,27 @@ export default defineConfig({
           { text: 'MyBatis', link: '/framework/mybatis/' },
         ],
       },
+      {
+        text: '系统设计',
+        collapsed: true,
+        items: [
+          { text: '规划中', link: '/system-design/' },
+        ],
+      },
+      {
+        text: '分布式',
+        collapsed: true,
+        items: [
+          { text: '规划中', link: '/distributed/' },
+        ],
+      },
+      {
+        text: '高性能 & 高可用',
+        collapsed: true,
+        items: [
+          { text: '规划中', link: '/high-availability/' },
+        ],
+      },
     ],
     search: {
       provider: 'local',

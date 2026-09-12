@@ -1,0 +1,6 @@
+# 系统设计
+
+<Badge type="info" text="大类：系统设计" />
+<Badge type="warning" text="规划中" />
+
+本大类规划中，将覆盖高频系统设计实战题（短链、限流、秒杀等）。
