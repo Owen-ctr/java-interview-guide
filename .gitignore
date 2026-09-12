@@ -14,6 +14,9 @@ docs/.vitepress/cache
 # CodeBuddy 本地数据（项目相关但非源码，不入库）
 .codebuddy
 
+# MiMoCode 本地数据（计划文件、定时任务等，不入库）
+.mimocode
+
 # 项目约定文档（本地参考，不入库）
 CODEBUDDY.md
 AGENTS.md
