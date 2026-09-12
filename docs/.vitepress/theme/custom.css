@@ -1,0 +1,30 @@
+/* 自动给每道题（h2 标题）编号：内容里去掉手写「1. 2. 3.」后由渲染自动生成，
+   插入/删除题目时序号自动重排，无需手动维护。 */
+.vp-doc {
+  counter-reset: qa;
+}
+
+.vp-doc h2 {
+  counter-increment: qa;
+}
+
+.vp-doc h2::before {
+  content: counter(qa) '. ';
+  font-weight: 600;
+  margin-right: 0.25em;
+}
+
+/* 调低断点：窗口宽度 ≥768px 时，外观切换与 GitHub 图标直接显示在导航栏右上角
+   （VitePress 默认要 ≥1280px）；真正的移动端（<768px）仍收进菜单。
+   注：display 需 !important 才能压过 VitePress 组件自带的 scoped display:none。 */
+@media (min-width: 768px) {
+  .VPNavBarAppearance,
+  .VPNavBarSocialLinks {
+    display: flex !important;
+    align-items: center;
+  }
+}
+
+.VPNavBarExtra {
+  display: none !important;
+}

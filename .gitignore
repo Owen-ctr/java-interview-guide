@@ -1,0 +1,12 @@
+# 依赖
+node_modules
+
+# 构建产物
+dist
+docs/.vitepress/dist
+docs/.vitepress/cache
+
+# 本地环境
+.DS_Store
+*.local
+.env
