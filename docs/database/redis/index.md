@@ -1,5 +1,3 @@
 # Redis
 
-<Badge type="info" text="模块：Redis" />
-
 本模块覆盖 Redis 数据结构、缓存、持久化、高可用等面试常考点，题目待补充。

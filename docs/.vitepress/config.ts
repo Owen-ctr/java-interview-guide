@@ -13,7 +13,7 @@ export default defineConfig({
   themeConfig: {
     aside: true,
     outline: {
-      level: [2, 3],
+      level: [2, 2],
       label: '本页题目',
     },
     sidebar: [

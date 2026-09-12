@@ -1,5 +1,3 @@
 # MyBatis
 
-<Badge type="info" text="模块：MyBatis" />
-
 本模块覆盖 MyBatis 映射、缓存、`#{}` 与 `${}`、插件原理等面试常考点，题目待补充。
