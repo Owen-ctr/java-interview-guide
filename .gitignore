@@ -13,3 +13,6 @@ docs/.vitepress/cache
 
 # CodeBuddy 本地数据（项目相关但非源码，不入库）
 .codebuddy
+
+# 项目约定文档（本地参考，不入库）
+CODEBUDDY.md
